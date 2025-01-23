@@ -5,6 +5,7 @@ from Violet.Violet_base import list_all_files, write_pkl_file, read_pkl_file, ge
 import os
 import random
 import time
+import cv2
 
 from Violet.ImageMatch.moudels.search_tree_match import Map_matcher
 
@@ -95,7 +96,7 @@ def updata_database_from_G_data_pkl(G_data_pkl_path, pkl_file, save_name):
 if __name__ == '__main__':
     "E:/Genshin_frames_circle/01"
     "Genshin_01.pkl"
-    save_name = 'E:/MapMatch/pkl/test_12k'
+    save_name = './pkl/test_story'#'E:/MapMatch/pkl/test_12k'
     #process_img_2_pkl()
     mm = Map_matcher()
     #mm.process_img_2_pkl("E:/Genshin_Impact/01", save_name + '.pkl')
@@ -108,7 +109,7 @@ if __name__ == '__main__':
     #mm.generate_search_tree() #003
     #mm.save_search_tree(save_name + '_search_tree.pkl')
     mm.load_search_tree(save_name + '_search_tree.pkl')
-    mm.min_distance = mm.min_distance * 0.5
+    mm.min_distance = mm.min_distance
 
 
     
@@ -116,16 +117,22 @@ if __name__ == '__main__':
 
     all_path = list_all_files('E:/Genshin_Impact/')
 
-    """
+    
     for p in all_path:
-        r = mm.search_img(p)
+        r = mm.search_img_topk('002160.jpg')
+        #start_time = time.time()
+
+        #mm.insert(cv2.imread('000165.jpg'))
+        #end_time = time.time()
+        #print(f"Processing took {end_time - start_time} seconds")
+        print(r)
         if r[0] == None:
             print(r)
         
         #print(danmaku[r[0]])
 
         #time.sleep(5)
-    """
+    
 
     err = 0
     for d in mm.G_data:

@@ -275,18 +275,20 @@ class Map_matcher():
                 min_fa_distance = distance
                 tree_id = index
 
-        min_distance = float('inf')
+        #min_distance = float('inf')
         #img_id = None
         for index, data in enumerate(self.search_tree[tree_id]):
             distance =  distance_function(img_sign, data['vector'])
-            if distance < min_distance and distance <= mm.min_distance:
+            if distance <= 0.55:
                 #print(distance)
                 min_distance = distance
                 #img_id = data['id']
                 topk_list.append((data['id'], distance))
                 
-        
-        return sorted(topk_list, key=lambda x: x[1])  
+        if topk_list != []:
+            return sorted(topk_list, key=lambda x: x[1])  
+        else:
+            return []
     
     def search_img_without_tree(self, img_or_path, ):
         distance_function = self.distance_function
@@ -302,18 +304,18 @@ class Map_matcher():
 
         return best_id
     
-    def insert(self, img_or_path = None, signature = None,file_name = 'insert_img', ):
+    def insert(self, img_or_path = None, signature = None, file_name = 'insert_img', ):
         distance_function = self.distance_function
         
-        if img_or_path == None and signature == None:
-            print('Error: img_or_path and signature cannot be None at the same time.')
-            return
+        #if img_or_path == None and signature == None:
+        #    print('Error: img_or_path and signature cannot be None at the same time.')
+        #    return
         
-        if img_or_path != None:
-            gis = ImageSignature()
-            signature = gis.generate_signature(img_or_path)
-        else:
-            signature = signature
+        #if img_or_path != None:
+        gis = ImageSignature()
+        signature = gis.generate_signature(img_or_path)
+        #else:
+        #    signature = signature
 
         img_id = file_name + '/' + str(len(self.G_data)).zfill(6)
 
