@@ -1,7 +1,6 @@
-from Violet.ImageMatch.moudels.match import ImageMatcher
-from Violet.ImageMatch.moudels.cosin import cosine_similarity
+
 from image_match.goldberg import ImageSignature
-from Violet.Violet_base import list_all_files, write_pkl_file, read_pkl_file, get_parent_and_grandparent_dir
+
 import os
 import random
 import time
@@ -9,6 +8,18 @@ import cv2
 import base64
 import io
 import numpy as np
+import sys
+
+
+try:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_parent_dir = os.path.abspath(os.path.join(current_dir, "../.."))
+    sys.path.append(parent_parent_dir)
+except: pass
+
+from Violet.Violet_base import list_all_files, write_pkl_file, read_pkl_file, get_parent_and_grandparent_dir
+from Violet.ImageMatch.moudels.match import ImageMatcher
+from Violet.ImageMatch.moudels.cosin import cosine_similarity
 
 def base64_to_ndarray(base64_string):
     """
@@ -85,7 +96,13 @@ class Map_matcher():
         self.map = [-1 for _ in range(len(self.G_data))]
         
     def process_img_2_pkl(self, img_files_path, pkl_path):
-        all_img_path = list_all_files(img_files_path)
+        if type(img_files_path) == str:
+            all_img_path = list_all_files(img_files_path)
+        elif type(img_files_path) == list:
+            all_img_path = img_files_path
+        else:
+            print('Error: img_files_path must be str or list')
+            return
         gis = self.gis
 
         data = []
@@ -98,10 +115,13 @@ class Map_matcher():
             id = parent_name + '/' + base_name[:-4]
             data.append({'id': id, 'vector': tmp_sign})
         write_pkl_file(pkl_path, data)
+        self.G_data = data
+        self.map = [-1 for _ in range(len(self.G_data))]
 
     def process_img_2_pkl_from_base64db(self, data_list, pkl_path):
 
         gis = self.gis
+        G_data = []
         for i, data in enumerate(data_list):
             print(f'正在处理第{i+1}个图像')
             id = data['id']
@@ -111,9 +131,10 @@ class Map_matcher():
             #print(base_name)
             tmp_sign = gis.generate_signature(img)
             #id = parent_name + '/' + base_name[:-4]
-            data.append({'id': id, 'vector': tmp_sign})
-        write_pkl_file(pkl_path, data)
-
+            G_data.append({'id': id, 'vector': tmp_sign})
+        write_pkl_file(pkl_path, G_data)
+        self.G_data = G_data
+        self.map = [-1 for _ in range(len(self.G_data))]
     def save_fa_map(self, pkl_path):
         data = {'fa':self.fa_node, 'map':self.map}
         write_pkl_file(pkl_path, data)
@@ -255,7 +276,7 @@ class Map_matcher():
                 img_id = data['id']
 
         return img_id, min_distance      
-    def search_img_topk(self, img_or_path):
+    def search_img_topk(self, img_or_path, thoshold = 0.55):
 
         #sorted(tuple_list, key=lambda x: x[1])
         
@@ -279,7 +300,7 @@ class Map_matcher():
         #img_id = None
         for index, data in enumerate(self.search_tree[tree_id]):
             distance =  distance_function(img_sign, data['vector'])
-            if distance <= 0.55:
+            if distance <= thoshold:
                 #print(distance)
                 min_distance = distance
                 #img_id = data['id']
@@ -347,6 +368,34 @@ class Map_matcher():
                 self.search_tree[id].append(self.G_data[-1])
 
         return img_id + '.jpg'
+    
+    def insert_new(self, img_or_path = None, signature = None, img_id = 'insert_img', ):
+        #不调用G_data和fa_node fa_map进行插入，直接加入搜索树中
+        distance_function = self.distance_function
+        
+        #img = base64_to_ndarray(img_base64)
+        signature = self.gis.generate_signature(img_or_path)
+
+
+        self.G_data.append({'id': img_id, 'vector': signature})
+
+
+        min_distance = float('inf')
+        insert_id = -1
+        for id, data_list in enumerate(self.search_tree):
+            fa_id = data_list[0]['id']
+            fa_vector = data_list[0]['vector']
+            distance = distance_function(signature, fa_vector)
+            if distance < min_distance:
+                min_distance = distance
+                insert_id = id
+
+        if min_distance > self.min_distance:
+            self.search_tree.append[[{'id': img_id, 'vector': signature}]]
+        else:
+            self.search_tree[insert_id].append({'id': img_id, 'vector': signature})
+
+        return img_id
 
     def insert_base64(self, img_id, img_base64):
         distance_function = self.distance_function

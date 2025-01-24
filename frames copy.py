@@ -91,7 +91,7 @@ if __name__ == '__main__':
     from Violet.Violet_base import list_all_files
     all_video_path = list_all_files(r"D:\Program Files\JiJiDown\Download\gs")
 
-    star = 54
+    star = 62
 
     his = 48
 
